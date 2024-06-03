@@ -3,21 +3,7 @@ document.getElementById('register-button').addEventListener('click', registerUse
 document.getElementById('save-entry').addEventListener('click', saveEntry);
 document.getElementById('list-entries').addEventListener('click', listEntries);
 
-async function fetchData() {
-    const response = await fetch('/data');
-    const data = await response.text();
-    return data ? JSON.parse(data) : { users: [], entries: [] };
-}
-
-async function saveData(data) {
-    await fetch('/data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: JSON.stringify(data) })
-    });
-}
-
-async function loginUser() {
+function loginUser() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
 
@@ -26,8 +12,9 @@ async function loginUser() {
         return;
     }
 
-    const data = await fetchData();
-    const user = data.users.find(user => user.email === email && user.password === password);
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+
+    const user = users.find(user => user.email === email && user.password === password);
 
     if (user) {
         alert('Login bem-sucedido!');
@@ -39,7 +26,7 @@ async function loginUser() {
     }
 }
 
-async function registerUser() {
+function registerUser() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
 
@@ -48,26 +35,27 @@ async function registerUser() {
         return;
     }
 
-    const data = await fetchData();
-    const userExists = data.users.some(user => user.email === email);
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+
+    const userExists = users.some(user => user.email === email);
 
     if (!userExists) {
-        data.users.push({ email, password });
-        await saveData(data);
+        users.push({ email, password });
+        localStorage.setItem('users', JSON.stringify(users));
         alert('Registrado com sucesso!');
     } else {
         alert('Usuário já existe.');
     }
 }
 
-async function saveEntry() {
+function saveEntry() {
     const email = localStorage.getItem('currentUser');
     const entry = document.getElementById('entry-text').value;
 
     if (entry.trim()) {
-        const data = await fetchData();
-        data.entries.push({ email, entry, date: new Date().toLocaleString() });
-        await saveData(data);
+        let entries = JSON.parse(localStorage.getItem('entries')) || [];
+        entries.push({ email, entry, date: new Date().toLocaleString() });
+        localStorage.setItem('entries', JSON.stringify(entries));
         alert('Registro salvo com sucesso!');
         document.getElementById('entry-text').value = '';
     } else {
@@ -75,13 +63,13 @@ async function saveEntry() {
     }
 }
 
-async function listEntries() {
+function listEntries() {
     const email = localStorage.getItem('currentUser');
     const entriesList = document.getElementById('entries-list');
     entriesList.innerHTML = '';
 
-    const data = await fetchData();
-    const userEntries = data.entries.filter(entry => entry.email === email);
+    let entries = JSON.parse(localStorage.getItem('entries')) || [];
+    const userEntries = entries.filter(entry => entry.email === email);
 
     if (userEntries.length > 0) {
         userEntries.forEach((entry, index) => {
@@ -118,20 +106,20 @@ async function listEntries() {
     }
 }
 
-async function deleteEntry(index) {
-    const data = await fetchData();
-    data.entries.splice(index, 1);
-    await saveData(data);
+function deleteEntry(index) {
+    let entries = JSON.parse(localStorage.getItem('entries')) || [];
+    entries.splice(index, 1);
+    localStorage.setItem('entries', JSON.stringify(entries));
     listEntries();
 }
 
-async function editEntry(index) {
-    const data = await fetchData();
-    const newEntry = prompt('Edite sua entrada:', data.entries[index].entry);
+function editEntry(index) {
+    let entries = JSON.parse(localStorage.getItem('entries')) || [];
+    const newEntry = prompt('Edite sua entrada:', entries[index].entry);
 
     if (newEntry !== null) {
-        data.entries[index].entry = newEntry;
-        await saveData(data);
+        entries[index].entry = newEntry;
+        localStorage.setItem('entries', JSON.stringify(entries));
         listEntries();
     }
 }
