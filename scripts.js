@@ -3,7 +3,21 @@ document.getElementById('register-button').addEventListener('click', registerUse
 document.getElementById('save-entry').addEventListener('click', saveEntry);
 document.getElementById('list-entries').addEventListener('click', listEntries);
 
-function loginUser() {
+async function fetchData() {
+    const response = await fetch('/data');
+    const data = await response.text();
+    return data ? JSON.parse(data) : { users: [], entries: [] };
+}
+
+async function saveData(data) {
+    await fetch('/data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: JSON.stringify(data) })
+    });
+}
+
+async function loginUser() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
 
@@ -12,9 +26,8 @@ function loginUser() {
         return;
     }
 
-    let users = JSON.parse(localStorage.getItem('users')) || [];
-
-    const user = users.find(user => user.email === email && user.password === password);
+    const data = await fetchData();
+    const user = data.users.find(user => user.email === email && user.password === password);
 
     if (user) {
         alert('Login bem-sucedido!');
@@ -26,7 +39,7 @@ function loginUser() {
     }
 }
 
-function registerUser() {
+async function registerUser() {
     const email = document.getElementById('login-email').value;
     const password = document.getElementById('login-password').value;
 
@@ -35,27 +48,26 @@ function registerUser() {
         return;
     }
 
-    let users = JSON.parse(localStorage.getItem('users')) || [];
-
-    const userExists = users.some(user => user.email === email);
+    const data = await fetchData();
+    const userExists = data.users.some(user => user.email === email);
 
     if (!userExists) {
-        users.push({ email, password });
-        localStorage.setItem('users', JSON.stringify(users));
+        data.users.push({ email, password });
+        await saveData(data);
         alert('Registrado com sucesso!');
     } else {
         alert('Usuário já existe.');
     }
 }
 
-function saveEntry() {
+async function saveEntry() {
     const email = localStorage.getItem('currentUser');
     const entry = document.getElementById('entry-text').value;
 
     if (entry.trim()) {
-        let entries = JSON.parse(localStorage.getItem('entries')) || [];
-        entries.push({ email, entry, date: new Date().toLocaleString() });
-        localStorage.setItem('entries', JSON.stringify(entries));
+        const data = await fetchData();
+        data.entries.push({ email, entry, date: new Date().toLocaleString() });
+        await saveData(data);
         alert('Registro salvo com sucesso!');
         document.getElementById('entry-text').value = '';
     } else {
@@ -63,13 +75,13 @@ function saveEntry() {
     }
 }
 
-function listEntries() {
+async function listEntries() {
     const email = localStorage.getItem('currentUser');
     const entriesList = document.getElementById('entries-list');
     entriesList.innerHTML = '';
 
-    let entries = JSON.parse(localStorage.getItem('entries')) || [];
-    const userEntries = entries.filter(entry => entry.email === email);
+    const data = await fetchData();
+    const userEntries = data.entries.filter(entry => entry.email === email);
 
     if (userEntries.length > 0) {
         userEntries.forEach((entry, index) => {
@@ -106,20 +118,20 @@ function listEntries() {
     }
 }
 
-function deleteEntry(index) {
-    let entries = JSON.parse(localStorage.getItem('entries')) || [];
-    entries.splice(index, 1);
-    localStorage.setItem('entries', JSON.stringify(entries));
+async function deleteEntry(index) {
+    const data = await fetchData();
+    data.entries.splice(index, 1);
+    await saveData(data);
     listEntries();
 }
 
-function editEntry(index) {
-    let entries = JSON.parse(localStorage.getItem('entries')) || [];
-    const newEntry = prompt('Edite sua entrada:', entries[index].entry);
+async function editEntry(index) {
+    const data = await fetchData();
+    const newEntry = prompt('Edite sua entrada:', data.entries[index].entry);
 
     if (newEntry !== null) {
-        entries[index].entry = newEntry;
-        localStorage.setItem('entries', JSON.stringify(entries));
+        data.entries[index].entry = newEntry;
+        await saveData(data);
         listEntries();
     }
 }
