@@ -1,66 +1,53 @@
-// Função para salvar entrada
-document.getElementById('save-entry').addEventListener('click', function() {
-    const entryText = document.getElementById('entry-text').value;
-    if (entryText.trim()) {
-        const entries = JSON.parse(localStorage.getItem('entries')) || [];
-        entries.push({
-            id: new Date().getTime(),
-            text: entryText,
-            timestamp: new Date().toISOString()
-        });
-        localStorage.setItem('entries', JSON.stringify(entries));
-        document.getElementById('entry-text').value = '';
-        loadEntries();
+document.getElementById('login-button').addEventListener('click', loginUser);
+document.getElementById('register-button').addEventListener('click', registerUser);
+document.getElementById('save-entry').addEventListener('click', saveEntry);
+
+function loginUser() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+
+    const user = users.find(user => user.email === email && user.password === password);
+
+    if (user) {
+        alert('Login bem-sucedido!');
+        document.getElementById('auth-section').style.display = 'none';
+        document.getElementById('entry-section').style.display = 'block';
+        localStorage.setItem('currentUser', email);
+    } else {
+        alert('Email ou senha incorretos.');
     }
-});
-
-// Função para carregar entradas
-function loadEntries() {
-    const entryList = document.getElementById('entry-list');
-    entryList.innerHTML = '';
-    const entries = JSON.parse(localStorage.getItem('entries')) || [];
-    entries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-    entries.forEach(entry => {
-        const li = document.createElement('li');
-        li.className = 'list-group-item';
-        li.innerHTML = `
-            <span>${entry.text}</span>
-            <div class="entry-actions">
-                <button onclick="editEntry(${entry.id})">Editar</button>
-                <button onclick="deleteEntry(${entry.id})">Excluir</button>
-            </div>
-        `;
-        entryList.appendChild(li);
-    });
 }
 
-// Função para editar entrada
-function editEntry(id) {
-    const entries = JSON.parse(localStorage.getItem('entries')) || [];
-    const entry = entries.find(entry => entry.id === id);
-    document.getElementById('edit-text').value = entry.text;
-    $('#editModal').modal('show');
-    document.getElementById('save-edit').onclick = function() {
-        saveEdit(id);
-    };
+function registerUser() {
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+
+    let users = JSON.parse(localStorage.getItem('users')) || [];
+
+    const userExists = users.some(user => user.email === email);
+
+    if (!userExists) {
+        users.push({ email, password });
+        localStorage.setItem('users', JSON.stringify(users));
+        alert('Registrado com sucesso!');
+    } else {
+        alert('Usuário já existe.');
+    }
 }
 
-function saveEdit(id) {
-    const entries = JSON.parse(localStorage.getItem('entries')) || [];
-    const entryIndex = entries.findIndex(entry => entry.id === id);
-    entries[entryIndex].text = document.getElementById('edit-text').value;
-    localStorage.setItem('entries', JSON.stringify(entries));
-    $('#editModal').modal('hide');
-    loadEntries();
-}
+function saveEntry() {
+    const email = localStorage.getItem('currentUser');
+    const entry = document.getElementById('entry-text').value;
 
-// Função para deletar entrada
-function deleteEntry(id) {
-    let entries = JSON.parse(localStorage.getItem('entries')) || [];
-    entries = entries.filter(entry => entry.id !== id);
-    localStorage.setItem('entries', JSON.stringify(entries));
-    loadEntries();
+    if (entry.trim()) {
+        let entries = JSON.parse(localStorage.getItem('entries')) || [];
+        entries.push({ email, entry });
+        localStorage.setItem('entries', JSON.stringify(entries));
+        alert('Registro salvo com sucesso!');
+        document.getElementById('entry-text').value = '';
+    } else {
+        alert('Escreva alguma coisa.');
+    }
 }
-
-// Carregar entradas ao inicializar
-document.addEventListener('DOMContentLoaded', loadEntries);
